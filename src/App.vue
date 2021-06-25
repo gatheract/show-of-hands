@@ -7,7 +7,7 @@
 
 			<LoadingSpinner />
 
-			<router-view/>
+			<Home/>
 		</b-container>
 	</div>
 </template>
@@ -17,6 +17,7 @@
 import Navbar from '@/components/Navbar';
 import Error from '@/components/Error';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import Home from '@/pages/Home';
 import gatheract from '@/gatheract'
 
 export default {
@@ -24,6 +25,7 @@ export default {
 		Navbar,
 		Error,
 		LoadingSpinner,
+		Home,
 	},
 
 	mounted() {

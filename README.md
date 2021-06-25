@@ -1,9 +1,5 @@
-# Rapid Polls Vue Frontend
-This is the frontend for Rapid Polls.
-
-Demo: https://rapidpolls-c09f3.web.app/#/
-
-![Demo Image](https://i.imgur.com/BOBYHaJ.png)
+# Show Of Hands
+This app uses GatherAct to enable live polling in meetings
 
 ## Project setup
 ```

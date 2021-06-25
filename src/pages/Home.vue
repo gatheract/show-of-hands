@@ -1,30 +1,36 @@
 <template>
 	<div>
-		<b-row>
-			<b-col>
-				<h2>Welcome to Rapid Polls! 🙋🏻</h2>
-			</b-col>
-		</b-row>
-
-		<hr>
 		
-		<CreatePollForm />
+		<div v-if="isHost">
+			<CreatePollForm />
+		</div>
+
+		<ViewPoll />
 
 	</div>
 </template>
 
 <script>
+/*global gatheract*/
 import store from '@/store';
 
 import CreatePollForm from '@/components/CreatePollForm';
+import ViewPoll from '@/pages/ViewPoll';
 
 export default {
 	components: {
 		CreatePollForm,
+		ViewPoll
+	},
+
+	data() {
+		return {
+			isHost: false,
+		};
 	},
 
 	mounted() {
-		store.commit('setLoading', false);		
+		window.addEventListener('ga_channelInfo', function (e) { this.isHost = gatheract.isHost; }.bind(this), false);
 	}
 };
 </script>

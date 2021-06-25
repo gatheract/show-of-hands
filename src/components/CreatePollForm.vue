@@ -37,6 +37,7 @@
 </template>
 
 <script>
+/*global gatheract*/
 import store from '@/store';
 import db from '@/db';
 import { mapState } from 'vuex';
@@ -83,7 +84,13 @@ export default {
 				index++;
 			}
 
-			this.$router.push(`/poll/`);
+			gatheract.sendMessage({
+				type: "poll",
+				vote: db.votes,
+				title: db.title,
+				choices: db.choices
+			}, null, true)
+
 		},
 
 		focusChoice(index) {
