@@ -34,7 +34,7 @@
 
 							{{ choice.title }}
 							<b-progress height="2rem" class="mb-2">
-								<b-progress-bar :style="'background:' + choicesColors[index]" :value="votePercent(index)">
+								<b-progress-bar :style="'background:' + choicesColors[index]" :value="votePercentRelative(index)">
 									<span>{{ votePercent(index) }}% ({{ choice.votes }} votes)</span>
 								</b-progress-bar>
 							</b-progress>
@@ -127,6 +127,21 @@ export default {
 				return 0;
 			} else {
 				return ((db.choices[index].votes / db.total_votes) * 100).toFixed(2);
+			}
+		},
+
+		votePercentRelative(index) {
+			let max = -1;
+			db.choices.forEach((choice) => {
+				if(choice.votes > max) {
+					max = choice.votes;
+				}
+			})
+			// Calculate the percent a vote holds from the total votes
+			if (db.total_votes == 0) {
+				return 0;
+			} else {
+				return ((db.choices[index].votes / max) * 100).toFixed(2);
 			}
 		},
 
