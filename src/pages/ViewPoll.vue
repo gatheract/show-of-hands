@@ -4,13 +4,12 @@
 		<div v-if="!loading && !error">
 			<b-row class="mb-3">
 				<b-col>
-					<h3>{{ poll.title }}</h3>
-					<b-icon icon="clock"></b-icon> {{ convertTimestamp(poll.created_at) }}
+					<h3>{{ title }}</h3>
 				</b-col>
 			</b-row>
 
 			<!-- Not voted-->
-			<div v-if="!hasVoted">
+			<div>
 				<b-row>
 					<b-col>
 						<b-form @submit.prevent="vote">
@@ -26,12 +25,7 @@
 							<b-button type="submit" variant="primary">Vote</b-button>
 						</b-form>
 					</b-col>
-				</b-row>
-			</div>
 			
-			<!-- Voted -->
-			<div v-else>
-				<b-row>
 					<b-col>
 						<div v-for="(choice, index) in choices" :key="index">
 							<span v-if="index == indexVoted">
@@ -39,20 +33,18 @@
 							</span>
 
 							{{ choice.title }}
-							<span class="float-right">
-								{{ votePercent(index) }}% ({{ choice.votes }} votes)
-							</span>
-
 							<b-progress height="2rem" class="mb-2">
-								<b-progress-bar :style="'background:' + choicesColors[index]" :value="votePercent(index)"></b-progress-bar>
+								<b-progress-bar :style="'background:' + choicesColors[index]" :value="votePercent(index)">
+									<span>{{ votePercent(index) }}% ({{ choice.votes }} votes)</span>
+								</b-progress-bar>
 							</b-progress>
 						</div>
 
-						<h5 class="mt-3">Total Votes: {{ poll.total_votes }}</h5>
+						<h5 class="mt-3">Total Votes: {{ total_votes }}</h5>
 					</b-col>
 
 					<b-col>
-						<PollChart :data="chartData" :height="300" />
+						<PollChart :chartData="chartData" :height="300" />
 					</b-col>
 				</b-row>
 			</div>
@@ -61,11 +53,10 @@
 </template>
 
 <script>
+/*global gatheract*/
 import { mapState } from 'vuex';
 import store from '@/store';
-import firebase from '@/firebase';
-import db from '@/db';
-import { getIP, convertTimestamp } from '@/helpers';
+import db from '@/db'
 
 import PollChart from '@/components/PollChart';
 
@@ -76,11 +67,9 @@ export default {
 
 	data() {
 		return {
-			ip: '', 					// User IP
-			id: '', 					// Poll id (from params)
-			hasVoted: false, 	// If this IP already voted or not (to show vote/stats)
-			poll: [], 				// Poll object
-			choices: [], 			// Poll choices object
+			title: "",
+			choices: [],
+			total_votes: 0,
 			choicePicked: -1, // The choice picked from the vote form
 			indexVoted: -1, 	// The index this IP has voted on
 			chartData: {},		// Chart data
@@ -95,78 +84,50 @@ export default {
 	computed: mapState(['error', 'loading', 'user']),
 
 	async created() {
-		this.id = this.$route.params.pollId;
 
-		const poll = await db.collection('polls').doc(this.id).get();
-		if (!poll.exists) {
-			store.commit('setError', 'This poll does not exist');
-		} else {
-			this.poll = poll.data();
-		}
-
-		// Read choices
-		const choicesSnapshot = await db.collection('polls').doc(this.id).collection('choices').get();
-		this.choices = choicesSnapshot.docs.map((doc) => doc.data());
-
-		// Get the user's IP
-		try {
-			this.ip = await getIP();
-		} catch (e) {
-			store.commit('setError', "Could not fetch information that's required to protect the polls on our site. Please disable your ad blocker and refresh this page.");
-			return;
-		}
-
-		// Check if the user has voted on this poll already
-		let vote = await db.collection('polls').doc(this.id).collection('votes').where('ip', '==', this.ip).get();
-		this.hasVoted = vote.docs.length > 0;
-		// Try looking for user id instead of ip, if ip was not found
-		if (!this.hasVoted && this.user != null) {
-			vote = await db.collection('polls').doc(this.id).collection('votes').where('user_id', '==', this.user.uid).get();
-			this.hasVoted =  vote.docs.length > 0;
-		}
-
-		if (this.hasVoted) {
-			this.indexVoted = vote.docs[0].data().choice;
-		} else {
-			// Check if enforce login is true and the user is not logged in
-			if (this.poll.enforce_login && this.user == null) {
-				store.commit('setError', 'You must be logged in to vote on this poll.');
-				return;
-			}
-		}
-
-		// Update chart data
-		let chartLabels = [];
-		let chartDatasets = [
-			{
-				label: "Data",
-				data: []
-			}
-		];
-		this.choices.forEach((choice) => {
-			chartLabels.push(choice.title);
-			chartDatasets[0].data.push(choice.votes);
-		});
-
-		chartDatasets[0].backgroundColor = this.choicesColors;
-
-		this.chartData = {
-			labels: chartLabels,
-			datasets: chartDatasets,
-		};
-
-		// Change page title
-		document.querySelector('head title').textContent = `${this.poll.title} - Rapid Polls`;
-
+		this.reload_db();
 		store.commit('setLoading', false);
+		window.addEventListener('new_db_data', function (e) { this.reload_db() }.bind(this), false);
 	},
 
 	methods: {
-		convertTimestamp,
+
+		reload_db() {
+			// Read choices
+			this.choices = db.choices;
+			this.title = db.title;
+			this.total_votes = db.total_votes;
+			// Update chart data
+			let chartLabels = [];
+			let chartDatasets = [
+				{
+					label: "Data",
+					data: []
+				}
+			];
+
+			db.choices.forEach((choice) => {
+				chartLabels.push(choice.title);
+				chartDatasets[0].data.push(choice.votes);
+			});
+
+			chartDatasets[0].backgroundColor = this.choicesColors;
+
+			this.chartData = {
+				labels: chartLabels,
+				datasets: chartDatasets,
+			};
+			this.$forceUpdate();
+		},
+	
 
 		votePercent(index) {
 			// Calculate the percent a vote holds from the total votes
-			return ((this.choices[index].votes / this.poll.total_votes) * 100).toFixed(2);
+			if (db.total_votes == 0) {
+				return 0;
+			} else {
+				return ((db.choices[index].votes / db.total_votes) * 100).toFixed(2);
+			}
 		},
 
 		async vote() {
@@ -174,26 +135,16 @@ export default {
 				return;
 			}
 
-			// Add a vote document with the user's details
-			await db.collection('polls').doc(this.id).collection('votes').doc().set({
-				ip: this.ip,
-				user_id: (this.user != null) ? this.user.uid : null,
-				choice: this.choicePicked,
-			});
+			gatheract.sendMessage({
+				type: "vote",
+				vote: this.choicePicked
+			}, null, true)
 
-			// Increment total votes for poll
-			await db.collection('polls').doc(this.id).update({
-				total_votes: firebase.firestore.FieldValue.increment(1),
-			});
-
-			// Increment votes for choice
-			await db.collection('polls').doc(this.id).collection('choices')
-				.doc(this.choicePicked.toString()).update({
-					votes: firebase.firestore.FieldValue.increment(1),
-			});
+			db.update();
 
 			// Reload page
-			this.$router.go();
+			this.reload_db();
+			//this.$router.go();
 		},
 	},
 };

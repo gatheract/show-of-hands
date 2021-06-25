@@ -1,13 +1,13 @@
 <script>
-import { Pie } from 'vue-chartjs';
+import { Pie, mixins } from 'vue-chartjs';
 
 export default {
 	extends: Pie,
-
-	props: ['data'],
+	mixins: [mixins.reactiveProp],
+	props: ['chartData'],
 
 	mounted() {
-		this.renderChart(this.data, {
+		this.renderChart(this.chartData, {
 			responsive: true,
 			maintainAspectRatio: false,
 		});

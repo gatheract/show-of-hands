@@ -13,12 +13,11 @@
 </template>
 
 <script>
-import firebase from '@/firebase';
-import store from '@/store';
 
 import Navbar from '@/components/Navbar';
 import Error from '@/components/Error';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import gatheract from '@/gatheract'
 
 export default {
 	components: {
@@ -27,16 +26,14 @@ export default {
 		LoadingSpinner,
 	},
 
+	mounted() {
+		
+	},
+
 	created() {
-		// Responsible on updating the store's user state
-		// accoring to the user state from firebase
-		firebase.auth().onAuthStateChanged(user => {
-			store.commit("setUser", user);
-		});
 	},
 }
 </script>
 
 <style lang="scss">
-
 </style>

@@ -2,7 +2,6 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../pages/Home.vue'
 import ViewPoll from '../pages/ViewPoll.vue'
-import MyPolls from '../pages/MyPolls.vue'
 
 import store from '@/store';
 
@@ -18,15 +17,7 @@ const routes = [
 		},
 	},
 	{
-		path: '/mypolls',
-		name: 'MyPolls',
-		component: MyPolls,
-			meta: {
-				title: 'My Polls - Rapid Polls'
-			},
-	},
-	{
-		path: '/poll/:pollId',
+		path: '/poll',
 		name: 'ViewPoll',
 		component: ViewPoll,
 		meta: {

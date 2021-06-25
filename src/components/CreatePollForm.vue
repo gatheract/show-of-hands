@@ -28,14 +28,6 @@
 
 				<b-row class="mb-3">
 					<b-col>
-						<b-form-checkbox v-model="enforceLogin">
-							Voters must be logged in
-						</b-form-checkbox>
-					</b-col>
-				</b-row>
-
-				<b-row class="mb-3">
-					<b-col>
 						<b-button type="submit" variant="primary">Create Poll</b-button>
 					</b-col>
 				</b-row>
@@ -46,10 +38,8 @@
 
 <script>
 import store from '@/store';
-import firebase from '@/firebase';
 import db from '@/db';
 import { mapState } from 'vuex';
-import { generateId } from '@/helpers';
 
 export default {
 	data() {
@@ -79,36 +69,21 @@ export default {
 				return;
 			}
 
-			// Generate a unique ID for the poll
-			let pollId = generateId(10);
-			while (true) { // eslint-disable-line no-constant-condition 
-				const doc = await db.collection('polls').doc(pollId).get();
-				if (!doc.exists) break;
-				pollId = generateId(10);
-			}
-
 			// Set poll document
-			await db.collection('polls').doc(pollId).set({
-				title: this.title,
-				total_votes: 0,
-				enforce_login: this.enforceLogin,
-				creator: (this.user != null) ? this.user.uid : null,
-				created_at: firebase.firestore.FieldValue.serverTimestamp(),
-			});
+			db.title = this.title;
 			
 			// Set poll's choices documents
 			let index = 0;
 			for (const choice of trimmedChoices) {
-				await db.collection('polls').doc(pollId).collection('choices').doc(index.toString()).set({
-					id: index,
+				db.choices[index] = {
 					title: choice,
 					votes: 0
-				});
+				};
 
 				index++;
 			}
 
-			this.$router.push(`/poll/${pollId}/`);
+			this.$router.push(`/poll/`);
 		},
 
 		focusChoice(index) {
