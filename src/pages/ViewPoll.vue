@@ -9,7 +9,16 @@
 			</b-row>
 
 			<!-- Not voted-->
-			<div>
+			<div v-if="showWaitMessage">
+				<b-row>
+					<b-col>
+						<div class="mb-3">
+							Waiting for the host to create the poll...
+						</div>
+					</b-col>
+				</b-row>
+			</div>
+			<div v-if="!showWaitMessage">
 				<b-row>
 					<b-col>
 						<b-form @submit.prevent="vote">
@@ -69,6 +78,7 @@ export default {
 		return {
 			title: "",
 			choices: [],
+			showWaitMessage: true,
 			total_votes: 0,
 			choicePicked: -1, // The choice picked from the vote form
 			indexVoted: -1, 	// The index this IP has voted on
@@ -105,6 +115,9 @@ export default {
 					data: []
 				}
 			];
+			if(this.choices.length > 0) {
+				this.showWaitMessage = false;
+			}
 
 			db.choices.forEach((choice) => {
 				chartLabels.push(choice.title);
